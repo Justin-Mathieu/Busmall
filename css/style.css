@@ -1,0 +1,32 @@
+body {
+}
+img {
+  width: 200px;
+  height: 200px;
+}
+main {
+  background-color: rgb(170, 168, 168);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 20% 1fr 1fr 1fr;
+}
+#images {
+  grid-row-start: 2;
+}
+
+p {
+  grid-column-start: 2;
+  grid-column-end: 5;
+}
+#show-results {
+  grid-row-start: 1;
+  /* border: 5px solid black; */
+  text-align: center;
+  justify-content: center;
+  height: 20px;
+  background-color: rgb(78, 78, 78);
+  color: antiquewhite;
+}
+#display-results {
+  grid-column-start: 1;
+}
