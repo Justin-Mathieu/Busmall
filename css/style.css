@@ -30,3 +30,7 @@ p {
 #display-results {
   grid-column-start: 1;
 }
+canvas {
+  background-color: rgb(214, 210, 210);
+  width: 50%;
+}
