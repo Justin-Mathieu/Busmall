@@ -50,16 +50,17 @@ new Product('wine-glass', './img/assets/wine-glass.jpg');
 function getRandomInt() {
   return Math.floor(Math.random() * busmallCatalog.length);
 }
+
+let newArray = [];
 function render() {
-  let newArray = [];
-  while (newArray.length < 3) {
+  while (newArray.length < 6) {
     let num = getRandomInt();
     while (newArray.includes(num)) {
       num = getRandomInt();
     }
     newArray.push(num);
   }
-  // console.log(newArray);
+  console.log(newArray);
   image1.src = busmallCatalog[newArray[0]].img;
   image1.alt = busmallCatalog[newArray[0]].name;
   busmallCatalog[newArray[0]].shown++;
@@ -71,12 +72,16 @@ function render() {
   image3.src = busmallCatalog[newArray[2]].img;
   image3.alt = busmallCatalog[newArray[2]].name;
   busmallCatalog[newArray[2]].shown++;
+  newArray.shift();
+  newArray.shift();
+  newArray.shift();
 }
+
 //event handler
 function imageHandler(event) {
   clicks++;
   let imageClick = event.target.alt;
-  console.log(imageClick);
+  // console.log(busmallCatalog);
 
   for (let i = 0; i < busmallCatalog.length; i++) {
     if (busmallCatalog[i].name === imageClick) {
@@ -92,13 +97,61 @@ function imageHandler(event) {
 }
 function resultsHandler(event) {
   if (clicks === attempts) {
+    let views = [];
+    let votes = [];
+    let names = [];
+
     for (let i = 0; i < busmallCatalog.length; i++) {
-      let li = document.createElement('li');
-      li.textContent = `${busmallCatalog[i].name} had ${busmallCatalog[i].votes} votes, and was seen ${busmallCatalog[i].shown} times.`;
-      results.appendChild(li);
+      let product = busmallCatalog[i];
+      views.push(product.shown);
+      names.push(product.name);
+      votes.push(product.votes);
     }
+    console.log('thisis views' + names);
+
+    console.log(names);
+    const ctx = document.getElementById('myChart').getContext('2d');
+    const myChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: names,
+        datasets: [
+          {
+            label: 'Views',
+            data: views,
+            backgroundColor: ['rgba(0, 0, 0, 0.5)'],
+            borderColor: ['rgba(75, 192, 192, 0.5)'],
+            borderWidth: 5,
+          },
+          {
+            label: 'Votes',
+            data: votes,
+            backgroundColor: ['rgba(0, 0, 0, 0.25)'],
+            borderColor: ['rgba(75, 192, 192, 0.5)'],
+            borderWidth: 5,
+          },
+        ],
+      },
+
+      options: {
+        indexAxis: 'y',
+        scales: {
+          y: {
+            beginAtZero: true,
+          },
+        },
+      },
+    });
   }
 }
+
+//     for (let i = 0; i < busmallCatalog.length; i++) {
+//       let li = document.createElement('li');
+//       li.textContent = `${busmallCatalog[i].name} had ${busmallCatalog[i].votes} votes, and was seen ${busmallCatalog[i].shown} times.`;
+//       results.appendChild(li);
+//     }
+//   }
+// }
 // console.log(busmallCatalog);
 //executable code
 render();
@@ -107,7 +160,7 @@ render();
 image1.addEventListener('click', imageHandler);
 image2.addEventListener('click', imageHandler);
 image3.addEventListener('click', imageHandler);
-console.log(busmallCatalog);
+// console.log(busmallCatalog);
 // event listener for results
 button.addEventListener('click', resultsHandler);
-console.log(results);
+// console.log(results);
