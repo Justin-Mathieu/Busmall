@@ -1,21 +1,18 @@
 'use strict';
 // global variables
-// number of attempts
-let attempts = 25;
-// clicks made
-let clicks = 0;
-// array all products
-let busmallCatalog = [];
+const maxVotes = 25; // number of attempts
+const LOCAL_STORAGE_KEY = 'anything'; // key that results get stored under
+
+const busmallCatalog = []; // array all products
+const catalogQueue = []; // queue of products to show
+
 // dom connection
-let images = document.getElementById('images');
-let dispalyButton = document.getElementById('results');
-let image1 = document.getElementById('image1');
-let image2 = document.getElementById('image2');
-let image3 = document.getElementById('image3');
-// button
-let button = document.getElementById('show-results');
-let results = document.getElementById('display-results');
-//section
+const image1 = document.getElementById('image1');
+const image2 = document.getElementById('image2');
+const image3 = document.getElementById('image3');
+
+// clicks made
+let votesMade = 0;
 
 //constructor
 function Product(name, img) {
@@ -47,39 +44,59 @@ new Product('wine-glass', './img/assets/wine-glass.jpg');
 
 //functions
 // randon number function for mdn
-function getRandomInt() {
+function getRandomIndexFromCatalog() {
   return Math.floor(Math.random() * busmallCatalog.length);
 }
 
-let newArray = [];
-function render() {
-  while (newArray.length < 6) {
-    let num = getRandomInt();
-    while (newArray.includes(num)) {
-      num = getRandomInt();
+function fillCatalogQueue() {
+  while (catalogQueue.length < 6) {
+    let num = getRandomIndexFromCatalog();
+    while (catalogQueue.includes(num)) {
+      num = getRandomIndexFromCatalog();
     }
-    newArray.push(num);
+    catalogQueue.push(num);
   }
-  console.log(newArray);
-  image1.src = busmallCatalog[newArray[0]].img;
-  image1.alt = busmallCatalog[newArray[0]].name;
-  busmallCatalog[newArray[0]].shown++;
+}
 
-  image2.src = busmallCatalog[newArray[1]].img;
-  image2.alt = busmallCatalog[newArray[1]].name;
-  busmallCatalog[newArray[1]].shown++;
+function renderImages() {
+  fillCatalogQueue();
 
-  image3.src = busmallCatalog[newArray[2]].img;
-  image3.alt = busmallCatalog[newArray[2]].name;
-  busmallCatalog[newArray[2]].shown++;
-  newArray.shift();
-  newArray.shift();
-  newArray.shift();
+  console.log(catalogQueue);
+  image1.src = busmallCatalog[catalogQueue[0]].img;
+  image1.alt = busmallCatalog[catalogQueue[0]].name;
+  busmallCatalog[catalogQueue[0]].shown++;
+
+  image2.src = busmallCatalog[catalogQueue[1]].img;
+  image2.alt = busmallCatalog[catalogQueue[1]].name;
+  busmallCatalog[catalogQueue[1]].shown++;
+
+  image3.src = busmallCatalog[catalogQueue[2]].img;
+  image3.alt = busmallCatalog[catalogQueue[2]].name;
+  busmallCatalog[catalogQueue[2]].shown++;
+  catalogQueue.shift();
+  catalogQueue.shift();
+  catalogQueue.shift();
+}
+
+function handleMaxAttempts() {
+  let views = [];
+  let votes = [];
+  let names = [];
+
+  for (let i = 0; i < busmallCatalog.length; i++) {
+    let product = busmallCatalog[i];
+    views.push(product.shown);
+    names.push(product.name);
+    votes.push(product.votes);
+  }
+  putResultsinLocalStorage(views, votes, names);
+
+  renderChart(views, votes, names);
 }
 
 //event handler
-function imageHandler(event) {
-  clicks++;
+function imageClickHandler(event) {
+  votesMade++;
   let imageClick = event.target.alt;
   // console.log(busmallCatalog);
 
@@ -88,79 +105,89 @@ function imageHandler(event) {
       busmallCatalog[i].votes++;
     }
   }
-  render();
-  if (clicks === attempts) {
-    image1.removeEventListener('click', imageHandler);
-    image2.removeEventListener('click', imageHandler);
-    image3.removeEventListener('click', imageHandler);
+
+  renderImages();
+  //if max attempts reached render chart
+  if (votesMade === maxVotes) {
+    image1.removeEventListener('click', imageClickHandler);
+    image2.removeEventListener('click', imageClickHandler);
+    image3.removeEventListener('click', imageClickHandler);
+    handleMaxAttempts();
   }
 }
-function resultsHandler(event) {
-  if (clicks === attempts) {
-    let views = [];
-    let votes = [];
-    let names = [];
 
-    for (let i = 0; i < busmallCatalog.length; i++) {
-      let product = busmallCatalog[i];
-      views.push(product.shown);
-      names.push(product.name);
-      votes.push(product.votes);
-    }
-    console.log('thisis views' + names);
+function putResultsinLocalStorage(views, votes, names) {
+  //stringify views votes names
+  const stuffAsObject = {
+    views: views,
+    votes: votes,
+    names: names,
+  };
+  const stringifiedStuff = JSON.stringify(stuffAsObject);
+  localStorage.setItem(LOCAL_STORAGE_KEY, stringifiedStuff);
+}
 
-    console.log(names);
-    const ctx = document.getElementById('myChart').getContext('2d');
-    const myChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: names,
-        datasets: [
-          {
-            label: 'Views',
-            data: views,
-            backgroundColor: ['rgba(0, 0, 0, 0.5)'],
-            borderColor: ['rgba(75, 192, 192, 0.5)'],
-            borderWidth: 5,
-          },
-          {
-            label: 'Votes',
-            data: votes,
-            backgroundColor: ['rgba(0, 0, 0, 0.25)'],
-            borderColor: ['rgba(75, 192, 192, 0.5)'],
-            borderWidth: 5,
-          },
-        ],
-      },
+function getResultsFromLocalStorage() {
+  // check local storage for the results
+  let results = localStorage.getItem(LOCAL_STORAGE_KEY);
+  if (results === null) {
+    return false;
+  }
+  //get results back to js object
+  const parsedResults = JSON.parse(results);
+  return parsedResults;
+}
 
-      options: {
-        indexAxis: 'y',
-        scales: {
-          y: {
-            beginAtZero: true,
-          },
+function renderChart(views, votes, names) {
+  const ctx = document.getElementById('myChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: names,
+      datasets: [
+        {
+          label: 'Views',
+          data: views,
+          backgroundColor: ['rgba(0, 0, 0, 0.5)'],
+          borderColor: ['rgba(75, 192, 192, 0.5)'],
+          borderWidth: 5,
+        },
+        {
+          label: 'Votes',
+          data: votes,
+          backgroundColor: ['rgba(0, 0, 0, 0.25)'],
+          borderColor: ['rgba(75, 192, 192, 0.5)'],
+          borderWidth: 5,
+        },
+      ],
+    },
+
+    options: {
+      indexAxis: 'y',
+      scales: {
+        y: {
+          beginAtZero: true,
         },
       },
-    });
-  }
+    },
+  });
 }
 
-//     for (let i = 0; i < busmallCatalog.length; i++) {
-//       let li = document.createElement('li');
-//       li.textContent = `${busmallCatalog[i].name} had ${busmallCatalog[i].votes} votes, and was seen ${busmallCatalog[i].shown} times.`;
-//       results.appendChild(li);
-//     }
-//   }
-// }
-// console.log(busmallCatalog);
-//executable code
-render();
+// start of main logic
 
-// event listener for clicks
-image1.addEventListener('click', imageHandler);
-image2.addEventListener('click', imageHandler);
-image3.addEventListener('click', imageHandler);
-// console.log(busmallCatalog);
-// event listener for results
-button.addEventListener('click', resultsHandler);
-// console.log(results);
+renderImages(); // initial render of images
+
+const resultsFromLocalStorage = getResultsFromLocalStorage();
+// if results from local storage, render chart with them
+if (resultsFromLocalStorage) {
+  const views = resultsFromLocalStorage.views;
+  const votes = resultsFromLocalStorage.votes;
+  const names = resultsFromLocalStorage.names;
+  renderChart(views, votes, names);
+} else {
+  // if no results from local storage,
+  // attach image click handlers, enabling the quiz
+  image1.addEventListener('click', imageClickHandler);
+  image2.addEventListener('click', imageClickHandler);
+  image3.addEventListener('click', imageClickHandler);
+}
